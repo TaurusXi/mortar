@@ -46,22 +46,14 @@ public class MortarScopeDevHelper {
     }
 
     private void addScopeChildren(List<Node> childNodes) {
-      if (!(mortarScope instanceof RealScope)) {
-        return;
-      }
-      RealScope realScope = (RealScope) mortarScope;
-      for (MortarScope childScope : realScope.children.values()) {
+      for (MortarScope childScope : mortarScope.children.values()) {
         childNodes.add(new MortarScopeNode(childScope));
       }
     }
   }
 
 
-  private static MortarScope getRootScope(MortarScope mortarScope) {
-    if (!(mortarScope instanceof RealScope)) {
-      return mortarScope;
-    }
-    RealScope scope = (RealScope) mortarScope;
+  private static MortarScope getRootScope(MortarScope scope) {
     while (scope.parent != null) {
       scope = scope.parent;
     }

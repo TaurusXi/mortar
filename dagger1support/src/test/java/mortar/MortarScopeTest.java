@@ -23,8 +23,8 @@ import java.lang.annotation.Retention;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Inject;
 import javax.inject.Qualifier;
-import mortar.dagger1support.ObjectGraphService;
 import mortar.dagger1support.Blueprint;
+import mortar.dagger1support.ObjectGraphService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -180,12 +180,12 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void MortarScopeHasName() {
-    MortarScope scope = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope scope = createRootScope(create(new Able()));
     assertThat(scope.getName()).isSameAs(MortarScope.ROOT_NAME);
   }
 
   @Test public void createMortarScopeUsesModules() {
-    MortarScope scope = ObjectGraphService.createRootScope(create(new Able(), new Baker()));
+    MortarScope scope = createRootScope(create(new Able(), new Baker()));
     ObjectGraph objectGraph = getObjectGraph(scope);
     assertThat(objectGraph.get(HasApple.class).string).isEqualTo(Apple.class.getName());
     assertThat(objectGraph.get(HasBagel.class).string).isEqualTo(Bagel.class.getName());
@@ -199,29 +199,28 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void destroyRoot() {
-    MortarScope scope = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope scope = createRootScope(create(new Able()));
     scope.register(scoped);
     scope.destroy();
     verify(scoped).onExitScope();
   }
 
   @Test public void activityScopeName() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
 
     String bagel = Bagel.class.getName();
     assertThat(activityScope.getName()).isEqualTo(bagel);
     assertThat(root.findChild(bagel)).isSameAs(activityScope);
     assertThat(requireChild(root, new BakerBlueprint())).isSameAs(activityScope);
-    assertThat(ObjectGraphService.requireActivityScope(root, new BakerBlueprint())).isSameAs(activityScope);
+    assertThat(ObjectGraphService.requireActivityScope(root, new BakerBlueprint())).isSameAs(
+        activityScope);
     assertThat(root.findChild("herman")).isNull();
   }
 
   @Test public void getActivityScopeWithOneModule() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     ObjectGraph objectGraph = getObjectGraph(activityScope);
     assertThat(objectGraph.get(HasApple.class).string).isEqualTo(Apple.class.getName());
     assertThat(objectGraph.get(HasBagel.class).string).isEqualTo(Bagel.class.getName());
@@ -235,9 +234,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void getActivityScopeWithMoreModules() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new MoreModules());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new MoreModules());
     ObjectGraph objectGraph = getObjectGraph(activityScope);
     assertThat(objectGraph.get(HasApple.class).string).isEqualTo(Apple.class.getName());
     assertThat(objectGraph.get(HasDogfood.class).string).isEqualTo(Dogfood.class.getName());
@@ -252,7 +250,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void destroyActivityScopeDirect() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope root = createRootScope(create(new Able()));
     BakerBlueprint blueprint = new BakerBlueprint();
     MortarScope activityScope = ObjectGraphService.requireActivityScope(root, blueprint);
     assertThat(root.findChild(blueprint.getMortarScopeName())).isSameAs(activityScope);
@@ -263,7 +261,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void destroyActivityScopeRecursive() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope root = createRootScope(create(new Able()));
     BakerBlueprint blueprint = new BakerBlueprint();
     MortarScope activityScope = ObjectGraphService.requireActivityScope(root, blueprint);
     assertThat(root.findChild(blueprint.getMortarScopeName())).isSameAs(activityScope);
@@ -279,9 +277,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void activityChildScopeName() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     MortarScope child = requireChild(activityScope, new CharlieBlueprint());
 
     String carrot = Carrot.class.getName();
@@ -292,9 +289,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void requireGrandchildWithOneModule() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     MortarScope child = requireChild(activityScope, new CharlieBlueprint());
     MortarScope grandchild = requireChild(child, new DeltaBlueprint());
     ObjectGraph objectGraph = getObjectGraph(grandchild);
@@ -312,9 +308,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void requireGrandchildWithMoreModules() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     MortarScope child = requireChild(activityScope, new CharlieBlueprint());
     MortarScope grandchild = requireChild(child, new MoreModules());
 
@@ -334,9 +329,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void requireGrandchildWithNoModules() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     MortarScope child = requireChild(activityScope, new CharlieBlueprint());
     MortarScope grandchild = requireChild(child, new NoModules());
 
@@ -355,10 +349,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void destroyActivityChildScopeDirect() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope root = createRootScope(create(new Able()));
     CharlieBlueprint blueprint = new CharlieBlueprint();
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     MortarScope child = requireChild(activityScope, blueprint);
     assertThat(activityScope.findChild(blueprint.getMortarScopeName())).isSameAs(child);
     child.register(scoped);
@@ -368,10 +361,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void destroyActivityChildScopeRecursive() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope root = createRootScope(create(new Able()));
     CharlieBlueprint blueprint = new CharlieBlueprint();
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     MortarScope child = requireChild(activityScope, blueprint);
     assertThat(activityScope.findChild(blueprint.getMortarScopeName())).isSameAs(child);
     child.register(scoped);
@@ -386,9 +378,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void activityGrandchildScopeName() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     MortarScope child = requireChild(activityScope, new CharlieBlueprint());
     MortarScope grandchild = requireChild(child, new DeltaBlueprint());
 
@@ -400,9 +391,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void requireChildWithOneModule() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     MortarScope child = requireChild(activityScope, new CharlieBlueprint());
 
     ObjectGraph objectGraph = getObjectGraph(child);
@@ -412,9 +402,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void requireChildWithMoreModules() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
-    MortarScope activityScope = ObjectGraphService.requireActivityScope(root,
-        new BakerBlueprint());
+    MortarScope root = createRootScope(create(new Able()));
+    MortarScope activityScope = ObjectGraphService.requireActivityScope(root, new BakerBlueprint());
     MortarScope child = requireChild(activityScope, new MoreModules());
 
     ObjectGraph objectGraph = getObjectGraph(child);
@@ -425,7 +414,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void requireChildWithNoModules() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope root = createRootScope(create(new Able()));
     MortarScope child = requireChild(root, new NoModules());
 
     ObjectGraph objectGraph = getObjectGraph(child);
@@ -435,7 +424,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
   @Test public void handlesRecursiveDestroy() {
     final AtomicInteger i = new AtomicInteger(0);
 
-    final MortarScope scope = ObjectGraphService.createRootScope(create(new Able()));
+    final MortarScope scope = createRootScope(create(new Able()));
     scope.register(new Scoped() {
       @Override public void onEnterScope(MortarScope scope) {
       }
@@ -450,7 +439,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void inject() {
-    final MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    final MortarScope root = createRootScope(create(new Able()));
     when(context.getSystemService(any(String.class))).then(new Answer<Object>() {
       @Override public Object answer(InvocationOnMock invocation) throws Throwable {
         return root.getService((String) invocation.getArguments()[0]);
@@ -462,43 +451,43 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void getScope() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope root = createRootScope(create(new Able()));
     when(context.getSystemService(MortarScope.SERVICE_NAME)).thenReturn(root);
-    assertThat(MortarScope.Finder.getScope(context)).isSameAs(root);
+    assertThat(MortarScope.getScope(context)).isSameAs(root);
   }
 
   @Test public void canGetNameFromDestroyed() {
-    MortarScope scope = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope scope = createRootScope(create(new Able()));
     scope.destroy();
     assertThat(scope.getName()).isEqualTo(MortarScope.ROOT_NAME);
   }
 
   @Test(expected = IllegalStateException.class) public void cannotGetObjectGraphFromDestroyed() {
-    MortarScope scope = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope scope = createRootScope(create(new Able()));
     scope.destroy();
     getObjectGraph(scope);
   }
 
   @Test(expected = IllegalStateException.class) public void cannotRegisterOnDestroyed() {
-    MortarScope scope = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope scope = createRootScope(create(new Able()));
     scope.destroy();
     scope.register(scoped);
   }
 
   @Test(expected = IllegalStateException.class) public void cannotFindChildFromDestroyed() {
-    MortarScope scope = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope scope = createRootScope(create(new Able()));
     scope.destroy();
     scope.findChild("foo");
   }
 
   @Test(expected = IllegalStateException.class) public void cannotRequireChildFromDestroyed() {
-    MortarScope scope = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope scope = createRootScope(create(new Able()));
     scope.destroy();
     requireChild(scope, new AbleBlueprint());
   }
 
   @Test public void destroyIsIdempotent() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope root = createRootScope(create(new Able()));
     MortarScope child = requireChild(root, new NoModules());
 
     final AtomicInteger destroys = new AtomicInteger(0);
@@ -519,7 +508,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void rootDestroyIsIdempotent() {
-    MortarScope scope = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope scope = createRootScope(create(new Able()));
 
     final AtomicInteger destroys = new AtomicInteger(0);
     scope.register(new Scoped() {
@@ -539,13 +528,19 @@ import static org.mockito.MockitoAnnotations.initMocks;
   }
 
   @Test public void isDestroyedStartsFalse() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope root = createRootScope(create(new Able()));
     assertThat(root.isDestroyed()).isFalse();
   }
 
   @Test public void isDestroyedGetsSet() {
-    MortarScope root = ObjectGraphService.createRootScope(create(new Able()));
+    MortarScope root = createRootScope(create(new Able()));
     root.destroy();
     assertThat(root.isDestroyed()).isTrue();
+  }
+
+  private static MortarScope createRootScope(ObjectGraph objectGraph) {
+    MortarScope.Builder builder = MortarScope.buildRootScope();
+    ObjectGraphService.inNewScope(builder, objectGraph);
+    return builder.build();
   }
 }

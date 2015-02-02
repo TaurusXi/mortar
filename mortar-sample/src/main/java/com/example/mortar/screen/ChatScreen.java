@@ -16,6 +16,7 @@
 package com.example.mortar.screen;
 
 import android.os.Bundle;
+import android.util.Log;
 import com.example.mortar.R;
 import com.example.mortar.android.ActionBarOwner;
 import com.example.mortar.core.RootModule;
@@ -34,9 +35,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import mortar.PopupPresenter;
 import mortar.ViewPresenter;
+import rx.Observer;
 import rx.Subscription;
 import rx.functions.Action0;
-import rx.functions.Action1;
 import rx.subscriptions.Subscriptions;
 
 @Layout(R.layout.chat_view) @WithModule(ChatScreen.Module.class)
@@ -100,10 +101,21 @@ public class ChatScreen extends Path implements HasParent {
 
       confirmer.takeView(getView().getConfirmerPopup());
 
-      running = chat.getMessages().subscribe(new Action1<Message>() {
-        @Override public void call(Message message) {
-          if (!hasView()) return;
-          getView().getItems().add(message);
+      running = chat.getMessages().subscribe(new Observer<Message>() {
+        @Override public void onCompleted() {
+          Log.w(getClass().getName(), "That's surprising, never thought this should end.");
+          running = null;
+        }
+
+        @Override public void onError(Throwable e) {
+          Log.w(getClass().getName(), "'sploded, will try again on next config change.");
+          Log.w(getClass().getName(), e);
+          running = null;
+        }
+
+        @Override public void onNext(Message message) {
+              if (!hasView()) return;
+              getView().getItems().add(message);
         }
       });
     }

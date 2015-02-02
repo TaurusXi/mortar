@@ -15,7 +15,7 @@ public interface Blueprint {
    * MortarScope#findChild(String) find} it in its parent. If {@link
    * ObjectGraphService#requireChild(MortarScope, Blueprint)} is called again with a {@link
    * Blueprint} of the same name, the original instance will be returned unless it has been
-   * {@link MortarScope#destroyChild(MortarScope)}  destroyed}.
+   * {@link MortarScope#destroy}  destroyed}.
    */
   String getMortarScopeName();
 

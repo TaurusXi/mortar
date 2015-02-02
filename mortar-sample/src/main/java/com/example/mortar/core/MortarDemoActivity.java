@@ -82,7 +82,7 @@ public class MortarDemoActivity extends android.app.Activity
 
     flow = getFlowBundler().onCreate(savedInstanceState);
 
-    MortarScope parentScope = MortarScope.Finder.getScope(getApplication());
+    MortarScope parentScope = MortarScope.getScope(getApplication());
 
     String scopeName = getLocalClassName() + "-task-" + getTaskId();
 
@@ -117,8 +117,10 @@ public class MortarDemoActivity extends android.app.Activity
   @Override public Object getSystemService(String name) {
     if (Flow.isFlowSystemService(name)) return flow;
 
-    Object mortarService = activityScope.getService(name);
-    if (mortarService != null) return mortarService;
+    if (activityScope != null) {
+      Object mortarService = activityScope.getService(name);
+      if (mortarService != null) return mortarService;
+    }
 
     return super.getSystemService(name);
   }

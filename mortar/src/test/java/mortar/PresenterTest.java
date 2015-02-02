@@ -36,7 +36,7 @@ public class PresenterTest {
   MortarScope activityScope;
 
   @Before public void setUp() {
-    root = MortarScope.Builder.ofRoot().build();
+    root = MortarScope.buildRootScope().build();
     MortarScope.Builder builder = root.buildChild("name");
     BundleServiceRunner.inNewScope(builder);
     activityScope = builder.build();

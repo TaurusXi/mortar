@@ -30,12 +30,12 @@ public final class MortarContextFactory implements PathContextFactory {
     private LayoutInflater inflater;
 
     static void destroyScope(Context context) {
-      MortarScope.Finder.getScope(context).destroy();
+      MortarScope.getScope(context).destroy();
     }
 
     public TearDownContext(Context context, MortarScope scope) {
       super(scope.createContext(context));
-      this.parentScope = MortarScope.Finder.getScope(context);
+      this.parentScope = MortarScope.getScope(context);
     }
 
     @Override public Object getSystemService(String name) {

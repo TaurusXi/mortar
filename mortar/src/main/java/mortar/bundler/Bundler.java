@@ -20,6 +20,10 @@ import mortar.MortarScope;
 
 /** Implemented by objects that want to persist via the bundle. */
 public interface Bundler {
+  /**
+   * Like {@link mortar.Scoped#onEnterScope}, called synchronously when a bundler
+   * is {@link BundleService#register registered} with a {@link BundleService}.
+   */
   void onEnterScope(MortarScope scope);
 
   /**
@@ -29,10 +33,10 @@ public interface Bundler {
   String getMortarBundleKey();
 
   /**
-   * Called when this object is {@link BundleServicex#register registered}, and each time
+   * Called when this object is {@link BundleService#register registered}, and each time
    * {@link BundleServiceRunner#onCreate} is called (e.g. after a configuration change like
-   * rotation, or after the app process is respawned). See {@link BundleServicex#register} for
-   * details.
+   * rotation, or after the app process is respawned). Callers should assume that the initial
+   * call to this method is made asynchronously, but be prepared for a synchronous call.
    *
    * <p>Note that receivers are likely to outlive multiple activity instances, and so receive
    * multiple calls of this method. Implementations should be prepared to ignore saved state if

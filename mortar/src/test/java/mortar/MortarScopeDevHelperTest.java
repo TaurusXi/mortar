@@ -24,7 +24,7 @@ public class MortarScopeDevHelperTest {
   private static final char BLANK = '\u00a0';
 
   @Test public void nestedScopeHierarchyToString() {
-    MortarScope root = MortarScope.Builder.ofRoot().build();
+    MortarScope root = MortarScope.buildRootScope().build();
     root.buildChild("Cadet").build();
 
     MortarScope colonel = root.buildChild("Colonel").build();
@@ -54,7 +54,7 @@ public class MortarScopeDevHelperTest {
   }
 
   @Test public void startsFromMortarScope() {
-    MortarScope root = MortarScope.Builder.ofRoot().build();
+    MortarScope root = MortarScope.buildRootScope().build();
     MortarScope child = root.buildChild("Child").build();
 
     String hierarchy = scopeHierarchyToString(child);
@@ -67,7 +67,7 @@ public class MortarScopeDevHelperTest {
   }
 
   @Test public void noSpaceAtLineBeginnings() {
-    MortarScope root = MortarScope.Builder.ofRoot().build();
+    MortarScope root = MortarScope.buildRootScope().build();
     MortarScope child = root.buildChild("Child").build();
     child.buildChild("Grand Child").build();
 

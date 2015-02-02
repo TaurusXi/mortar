@@ -23,7 +23,7 @@ public class HelloApplication extends Application {
 
   @Override public void onCreate() {
     super.onCreate();
-    rootScope = MortarScope.Builder.ofRoot().build();
+    rootScope = MortarScope.buildRootScope().build();
   }
 
   MortarScope getRootScope() {

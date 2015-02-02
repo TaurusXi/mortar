@@ -13,20 +13,21 @@ import mortar.bundler.BundleServiceRunner;
 public class ObjectGraphService {
   public static final String SERVICE_NAME = ObjectGraphService.class.getName();
 
+  /**
+   * Set the {@link ObjectGraph} to be provided from the new scope.
+   */
   public static void inNewScope(MortarScope.Builder builder, ObjectGraph objectGraph) {
     builder.withService(ObjectGraphService.SERVICE_NAME, objectGraph);
   }
 
-  @Deprecated
-  public static MortarScope createRootScope() {
-    return createRootScope(ObjectGraph.create());
-  }
-
-  @Deprecated
-  public static MortarScope createRootScope(ObjectGraph objectGraph) {
-    MortarScope.Builder builder = MortarScope.Builder.ofRoot();
-    inNewScope(builder, objectGraph);
-    return builder.build();
+  /**
+   * Create the {@link ObjectGraph} to be provided from the new scope.
+   * @throws NullPointerException if the builder has no parent, or the parent provide no graph
+   * @param daggerModule may be null, a single module (annotated with {@link dagger.Module}),
+   * or a collection of modules.
+   */
+  public static void inNewScope(MortarScope.Builder builder, Object daggerModule) {
+    inNewScope(builder, createSubgraph(getObjectGraph(builder.getParent()), daggerModule));
   }
 
   public static ObjectGraph getObjectGraph(Context context) {
@@ -46,8 +47,7 @@ public class ObjectGraphService {
     getObjectGraph(context).inject(object);
   }
 
-  @Deprecated
-  public static ObjectGraph createSubgraph(ObjectGraph parentGraph, Object daggerModule) {
+  private static ObjectGraph createSubgraph(ObjectGraph parentGraph, Object daggerModule) {
     ObjectGraph newGraph;
     if (daggerModule == null) {
       newGraph = parentGraph.plus();
@@ -68,8 +68,8 @@ public class ObjectGraphService {
    * It is expected that this method will be called from {@link Activity#onCreate}. Calling
    * it at other times may lead to surprises.
    */
-  @Deprecated
-  public static MortarScope requireActivityScope(MortarScope parentScope, Blueprint blueprint) {
+  @Deprecated public static MortarScope requireActivityScope(MortarScope parentScope,
+      Blueprint blueprint) {
     String childName = blueprint.getMortarScopeName();
     MortarScope child = parentScope.findChild(childName);
     if (child == null) {
@@ -92,8 +92,7 @@ public class ObjectGraphService {
    *
    * @throws IllegalStateException if this scope has been destroyed
    */
-  @Deprecated
-  public static MortarScope requireChild(MortarScope parentScope, Blueprint blueprint) {
+  @Deprecated public static MortarScope requireChild(MortarScope parentScope, Blueprint blueprint) {
     String childName = blueprint.getMortarScopeName();
     MortarScope child = parentScope.findChild(childName);
     if (child == null) {

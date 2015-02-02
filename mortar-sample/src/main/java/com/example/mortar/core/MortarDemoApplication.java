@@ -37,7 +37,9 @@ public class MortarDemoApplication extends Application {
   @Override public void onCreate() {
     super.onCreate();
 
-    rootScope = ObjectGraphService.createRootScope(ObjectGraph.create(new RootModule()));
+    MortarScope.Builder builder = MortarScope.buildRootScope();
+    ObjectGraphService.inNewScope(builder, ObjectGraph.create(new RootModule()));
+    rootScope = builder.build();
   }
 
   public FlowBundler getFlowBundler() {

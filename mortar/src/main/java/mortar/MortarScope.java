@@ -16,74 +16,170 @@
 package mortar;
 
 import android.content.Context;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import static java.lang.Integer.toHexString;
 import static java.lang.String.format;
 
-public interface MortarScope {
-  final String DIVIDER = ":";
-  final String ROOT_NAME = "Root";
-  final String SERVICE_NAME = MortarScope.class.getName();
+public class MortarScope {
+  public static final String DIVIDER = ":";
+  public static final String ROOT_NAME = "Root";
+  public static final String SERVICE_NAME = MortarScope.class.getName();
+
+  public static MortarScope getScope(Context context) {
+    return (MortarScope) context.getSystemService(MortarScope.SERVICE_NAME);
+  }
+
+  public static Builder buildRootScope() {
+    return new Builder(ROOT_NAME, null);
+  }
+
+  final Map<String, MortarScope> children = new LinkedHashMap<>();
+
+  private boolean dead;
+
+  private final Set<Scoped> tearDowns = new HashSet<>();
+  final MortarScope parent;
+  private final String name;
+  private final Map<String, Object> services;
+
+  MortarScope(String name, MortarScope parent, Map<String, Object> services) {
+    this.parent = parent;
+    this.name = name;
+    this.services = services;
+  }
 
   /**
    * Returns the name of this scope, used to retrieve it from its parent via {@link
    * #findChild(String)}.
    */
-  String getName();
+  public final String getName() {
+    return name;
+  }
 
-  String getPath();
+  public String getPath() {
+    if (parent == null) return getName();
+    return parent.getPath() + ":" + getName();
+  }
 
-  <T> T getService(String serviceName);
+  @SuppressWarnings("unchecked") public <T> T getService(String serviceName) {
+    assertNotDead();
+
+    if (MortarScope.class.getName().equals(serviceName)) return (T) this;
+
+    T service = (T) services.get(serviceName);
+    if (service != null) return service;
+
+    if (parent != null) return parent.getService(serviceName);
+
+    return null;
+  }
 
   /**
    * Register the given {@link Scoped} instance to have its {@link Scoped#onEnterScope(MortarScope)}
    * and {@link Scoped#onExitScope()} methods called. Redundant registrations are safe,
    * they will not lead to additional calls to these two methods.
    * <p>
-   * Calls to {@link Scoped#onEnterScope(MortarScope) onEnterScope} are dispatched asynchronously
-   * if a previous {@code register} call is already in progress.
+   * Calls to {@link Scoped#onEnterScope(MortarScope) onEnterScope} are dispatched asynchronously.
    *
    * @throws IllegalStateException if this scope has been destroyed
    */
-  void register(Scoped scoped);
+  public void register(Scoped scoped) {
+    assertNotDead();
+    if (tearDowns.add(scoped)) scoped.onEnterScope(this);
+  }
 
   /**
    * Returns the child scope whose name matches the given, or null if there is none.
    *
    * @throws IllegalStateException if this scope has been destroyed
    */
-  MortarScope findChild(String name);
+  public MortarScope findChild(String childName) {
+    assertNotDead();
+    return children.get(childName);
+  }
 
-  Builder buildChild(String name);
+  public Builder buildChild(String childName) {
+    assertNotDead();
+
+    if (childName.contains(DIVIDER)) {
+      throw new IllegalArgumentException(
+          format("Name \"%s\" must not contain '%s'", childName, DIVIDER));
+    }
+
+    if (children.containsKey(childName)) {
+      throw new IllegalArgumentException(
+          format("Scope \"%s\" already has a child named \"%s\"", name, childName));
+    }
+
+    return new Builder(childName, this);
+  }
 
   /**
    * Creates a new Context based on the given parent and this scope.
    */
-  Context createContext(Context parentContext);
+  public Context createContext(Context parentContext) {
+    return new MortarContextWrapper(parentContext, this);
+  }
+
+  /** Returns true if this scope has been destroyed, false otherwise. */
+  public boolean isDestroyed() {
+    return dead;
+  }
 
   /**
    * Sends {@link Scoped#onExitScope()} to all registrants and then clears the
    * registration list. Recursively destroys all children. Parent scope drops its reference
    * to this instance. Redundant calls to this method are safe.
    */
-  void destroy();
+  public void destroy() {
+    if (dead) return;
+    dead = true;
 
-  /** Returns true if this scope has been destroyed, false otherwise. */
-  boolean isDestroyed();
+    // TODO(ray) Wouldn't it make more sense to tear down the children first?
+    // And perhaps we shouldn't actually mark this scope dead until it's children
+    // have died first. If we do that, take some care that re-entrant calls
+    // to destroy() don't lead to redundant onExitScope calls. Maybe need an
+    // enum State {LIVE, DYING, DEAD}.
 
-  final class Builder {
+    for (Scoped s : tearDowns) s.onExitScope();
+    tearDowns.clear();
+    if (parent != null) parent.children.remove(getName());
+
+    List<MortarScope> snapshot = new ArrayList<>(children.values());
+    for (MortarScope child : snapshot) child.destroy();
+  }
+
+  @Override public String toString() {
+    return "MortarScope@" + toHexString(System.identityHashCode(this)) + "{" +
+        "name='" + getName() + '\'' +
+        '}';
+  }
+
+  void assertNotDead() {
+    if (isDestroyed()) throw new IllegalStateException("Scope " + getName() + " was destroyed");
+  }
+
+  public final static class Builder {
     private final String name;
-    private final RealScope parent;
+    private final MortarScope parent;
     private final Map<String, Object> serviceProviders = new LinkedHashMap<>();
 
-    public static Builder ofRoot() {
-      return new Builder(ROOT_NAME, null);
-    }
-
-    Builder(String name, RealScope parent) {
+    Builder(String name, MortarScope parent) {
       this.name = name;
       this.parent = parent;
+    }
+
+    /**
+     * Returns the parent scope we're building against, or null if we're building a root scope.
+     */
+    public MortarScope getParent() {
+      return parent;
     }
 
     public Builder withService(String serviceName, Object service) {
@@ -97,17 +193,11 @@ public interface MortarScope {
     }
 
     public MortarScope build() {
-      RealScope newScope = new RealScope(name, parent, serviceProviders);
+      MortarScope newScope = new MortarScope(name, parent, serviceProviders);
       if (parent != null) {
         parent.children.put(name, newScope);
       }
       return newScope;
-    }
-  }
-
-  final class Finder {
-    public static MortarScope getScope(Context context) {
-      return (MortarScope) context.getSystemService(MortarScope.SERVICE_NAME);
     }
   }
 }
